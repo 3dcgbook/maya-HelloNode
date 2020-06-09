@@ -4,49 +4,50 @@
 #include <maya/MPlug.h>
 #include <maya/MDataBlock.h>
 #include <maya/MDataHandle.h>
-#include <maya/MEvaluationNode.h>
 #include <maya/MFnPlugin.h>
-#include <maya/MGlobal.h>
 
 class HelloNode : public MPxNode
 {
-public:
+public: // 関数関連
 	HelloNode();
 	virtual ~HelloNode();
-	static  void*       creator();
 	
-	static  MStatus     initialize();
 	virtual MStatus     compute(const MPlug& plug, MDataBlock& data);
+	static  void*       creator();
+	static  MStatus     initialize();
 
-	virtual MStatus     setDependentsDirty(const MPlug& plug, MPlugArray& plugArray);
-	virtual MStatus     preEvaluation(const  MDGContext& context, const MEvaluationNode& evaluationNode);
-
+public: // プラグインIDのアトリビュートを入れるところ
+	static  MTypeId     id; // プラグインのID
 	static  MObject     input1; // 入力１のアトリビュート
 	static  MObject     input2; // 入力２のアトリビュート
-
 	static  MObject     output; // 出力用のアトリビュート
-	static  MTypeId     id; // プラグインのID
-
-private:
-	double doCalculation(const double& a, const double& b);
-	double cachedValue;
-	bool isCacheValid;
+	
 };
 
+
 // 静的な変数宣言
-MTypeId     HelloNode::id(0x80001);
+MTypeId     HelloNode::id(0x80002);
 MObject     HelloNode::input1;
 MObject     HelloNode::input2;
 MObject     HelloNode::output;
 
+
 // クラスの定義
-HelloNode::HelloNode() : isCacheValid(false), cachedValue(0.0)
+HelloNode::HelloNode()
 {
 }
+
 
 HelloNode::~HelloNode()
 {
 }
+
+
+void* HelloNode::creator()
+{
+	return new HelloNode();
+}
+
 
 // 重要な部分その１：アトリビュートを作る！
 MStatus HelloNode::initialize()
@@ -82,54 +83,14 @@ MStatus HelloNode::compute(const MPlug& plug, MDataBlock& data)
 	if (plug != output) {
 		return MS::kUnknownParameter;
 	}
-
 	double input1_data = data.inputValue(input1).asDouble();
-	double input2_data = data.inputValue(input2).asTime().value();
-	double output_value;
-	if (!isCacheValid)
-	{
-		cachedValue = doCalculation(input1_data, input2_data);
-		isCacheValid = true;
-	}
-	output_value = cachedValue;
+	double input2_data = data.inputValue(input2).asDouble();
+	double output_value = input1_data + input2_data;
 	data.outputValue(output).set(output_value);
 	data.setClean(plug);
-
 	return MS::kSuccess;
 }
 
-
-// 上記の実装で使われる、加算関数
-double HelloNode::doCalculation(const double& a, const double& b)
-{
-	return a + b;
-}
-
-// おまけ：プラグがダーティーになったかDG版
-MStatus HelloNode::setDependentsDirty(const MPlug& plug, MPlugArray& plugArray)
-{
-	if (plug == input1 || plug == input2)
-	{
-		MGlobal::displayInfo("MGlobal::setDependentsDirty");
-		isCacheValid = false;
-	}
-	return MS::kSuccess;
-}
-
-// おまけ：プラグがダーティーになったかパラレル版
-MStatus HelloNode::preEvaluation(const  MDGContext& context, const MEvaluationNode& evaluationNode)
-{
-	if (evaluationNode.dirtyPlugExists(input1) || evaluationNode.dirtyPlugExists(input2))
-	{
-		MGlobal::displayInfo("MGlobal::preEvaluation");
-		isCacheValid = false;
-	}
-	return MS::kSuccess;
-}
-void* HelloNode::creator()
-{
-	return new HelloNode();
-}
 
 // プラグインの登録部分
 MStatus initializePlugin(MObject obj)
@@ -143,6 +104,7 @@ MStatus initializePlugin(MObject obj)
 	);
 	return status;
 }
+
 
 // プラグインの解除部分
 MStatus uninitializePlugin(MObject obj)
