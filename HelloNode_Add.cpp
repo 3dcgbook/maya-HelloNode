@@ -11,7 +11,6 @@ class HelloNode : public MPxNode
 public: // 関数関連
 	HelloNode();
 	virtual ~HelloNode();
-	
 	virtual MStatus     compute(const MPlug& plug, MDataBlock& data);
 	static  void*       creator();
 	static  MStatus     initialize();
@@ -21,7 +20,6 @@ public: // プラグインIDのアトリビュートを入れるところ
 	static  MObject     input1; // 入力１のアトリビュート
 	static  MObject     input2; // 入力２のアトリビュート
 	static  MObject     output; // 出力用のアトリビュート
-	
 };
 
 
